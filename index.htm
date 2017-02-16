@@ -10,33 +10,41 @@
 	</head>
 	<body>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.min.js"></script>
+		<script src="https://threejs.org/examples/js/controls/TrackballControls.js"></script>
+		
 		<script>
-			// Our Javascript will go here.
-
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			//mouse rotate
+			var controls = new THREE.TrackballControls( camera );
+			controls.target.set( 0, 0, 0 )
+			controls.rotateSpeed = 3.0;
+			controls.zoomSpeed = 1.2;
+			controls.panSpeed = 2.8;
+			controls.noZoom = false;
+			controls.noPan = false;
+			controls.staticMoving = true;
+			controls.dynamicDampingFactor = 0.3;
+			controls.keys = [ 65, 83, 68 ];
 
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			
-			//skapa material, färger i detta fall
 			var materialCube = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 			var materialLine = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
-			//skapa geometri för linje
 			var geometryLine = new THREE.Geometry();
 			geometryLine.vertices.push(new THREE.Vector3(0, 0, 0));
 			geometryLine.vertices.push(new THREE.Vector3(0, 0, 0));
 			geometryLine.vertices.push(new THREE.Vector3(0, 0, 0));		
 
-			//skapa objekt, kuberna får även geometri skapad
 			var cube1 = new THREE.Mesh( new THREE.BoxGeometry( 1,1,1 ), materialCube );
 			var cube2 = new THREE.Mesh( new THREE.BoxGeometry( 1,1,1 ), materialCube );
 			var cube3 = new THREE.Mesh( new THREE.BoxGeometry( 1,1,1 ), materialCube );
 			var line = new THREE.Line(geometryLine, materialLine);
 
-			//sätt position
 			cube1.position.set(-4,-2,0);
 			cube2.position.set(0,0,0);
 			cube3.position.set(3,1,10);
@@ -44,27 +52,31 @@
 			line.geometry.vertices[1] = cube2.position;
 			line.geometry.vertices[2] = cube3.position;
 		
-			//lägg till i scen
 			scene.add( cube1 );
 			scene.add( cube2 );
 			scene.add( cube3 );
 			scene.add( line );
 			
 
-			//camera.position.z = 5;
 			camera.position.set(0,0,20);
+			
+			animate();
 
 			function render() {
-				//cube1.rotation.x += 0.01;
 				cube1.rotation.y += 0.05;
 				cube2.rotation.x -= 0.01;
 				cube2.rotation.y -= 0.01;
 				cube3.rotation.x += 0.1;
-				//cube3.rotation.y -= 0.1;
 
 				requestAnimationFrame( render );
 				renderer.render( scene, camera );
 			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update();
+			}	
+
 			render();
 		</script>
 	</body>
