@@ -24,7 +24,7 @@
 			}
 		</style>
 	</head>
-	<body>
+	<body>	
         <div id="container"></div>
 
 		<script src="https://threejs.org/build/three.js"></script>
@@ -38,6 +38,10 @@
 			var mouseX = 0, mouseY = 0;
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
+
+			var sphereRadius = 200;
+			var cameraRadius = 500;
+
 			init();
 			animate();
             render();
@@ -59,16 +63,15 @@
                 controls.dampingFactor = 0.3;
                 controls.keys = [ 65, 83, 68 ];
 
-				camera.position.z = 500;
+				setPositionFromLatLongAndRadius( 59.328220, 18.016351, cameraRadius, camera.position);
 				
 				scene = new THREE.Scene();
 				group = new THREE.Group();
 				scene.add( group );
 				// earth
 				var loader = new THREE.TextureLoader();
-				//loader.load( 'https://threejs.org/examples/textures/land_ocean_ice_cloud_2048.jpg', function ( texture ) {
 				loader.load( 'land_shallow_topo_2048.png', function ( texture ) {
-					var geometry = new THREE.SphereGeometry( 200, 20, 20 );
+					var geometry = new THREE.SphereGeometry( sphereRadius, 20, 20 );
 					var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
 					var mesh = new THREE.Mesh( geometry, material );
 					group.add( mesh );
@@ -125,26 +128,31 @@
 				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
 				var mesh = new THREE.Mesh( geometry, material ) ;
 
-				mesh = setMarkerPosition(lat, lng, mesh, groupMainObject);
+				mesh = setMarkerPosition(lat, lng, mesh, groupMainObject, sphereRadius+5);
 
 				return mesh;
 			}
 
-			function setMarkerPosition(lat, lng, mapMarker, groupMainObject) {
+			function setMarkerPosition(lat, lng, mapMarker, groupMainObject, pointRadius) {
+
+				setPositionFromLatLongAndRadius( lat, lng, pointRadius, mapMarker.position );
+
+				//mapMarker.lookAt(groupMainObject.position);
+
+				mapMarker.updateMatrix();
+				return mapMarker;
+			}			
+
+			function setPositionFromLatLongAndRadius(lat, lng, pointRadius, position){
 				lng = lng + 180;
 				lng = lng > 180 ? lng - 360 : lng;
 				
 				var phi = (90 - lat) * Math.PI / 180;
 				var theta = (180 - lng) * Math.PI / 180;
 
-				mapMarker.position.x = 205.0 * Math.sin(phi) * Math.cos(theta);
-				mapMarker.position.y = 205.0 * Math.cos(phi);
-				mapMarker.position.z = 205.0 * Math.sin(phi) * Math.sin(theta);
-
-				//mapMarker.lookAt(groupMainObject.position);
-
-				mapMarker.updateMatrix();
-				return mapMarker;
+				position.x = pointRadius * Math.sin(phi) * Math.cos(theta);
+				position.y = pointRadius * Math.cos(phi);
+				position.z = pointRadius * Math.sin(phi) * Math.sin(theta);
 			}
 
             function render() {
