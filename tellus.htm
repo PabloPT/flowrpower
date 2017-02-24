@@ -1,170 +1,229 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<title>three.js canvas - geometry - earth</title>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
-			body {
-				color: #808080;
-				font-family:Monospace;
-				font-size:13px;
-				text-align:center;
-				background-color: #ffffff;
-				margin: 0px;
-				overflow: hidden;
-			}
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 5px;
-			}
-			a {
-				color: #0080ff;
-			}
-		</style>
+	    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <link href="site.css" type="text/css" rel="stylesheet" />
+
 	</head>
-	<body>	
-        <div id="container"></div>
+<body>
+    <div class="divInfoContainer">
+        <img src="https://images1.ving.se/images/SiteID1/SiteLayout/ving_header_logo_small.png?v=1" width="250" />
+        
+        <div class="hotel-products">
+            <input type="radio" onchange="changeHotelProduct()" checked="checked" value="sunwing" name="hotelProduct" /> Sunwing<br/>
+            <input type="radio" onchange="changeHotelProduct()" value="sunprime" name="hotelProduct" /> Sunprime<br/>
+            <input type="radio" onchange="changeHotelProduct()" value="sungarden" name="hotelProduct" /> Sungarden
+        </div>
+        <div id="divInfoContent" class="divInfoContent">
+            <div id="divHotelName" class="hotel-name">
 
-		<script src="https://threejs.org/build/three.js"></script>
-		<script src="https://threejs.org/examples/js/renderers/Projector.js"></script>
-		<script src="https://threejs.org/examples/js/renderers/CanvasRenderer.js"></script>
-        <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-		<script>
-			var container;
-			var camera, scene, renderer, controls;
-			var group;
-			var mouseX = 0, mouseY = 0;
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
+            </div>
+            <div id="divHotelDescription" class="hotel-description">
 
-			var sphereRadius = 200;
-			var cameraRadius = 500;
+            </div>
+        </div>
+    </div>
+<div id="container"></div>
 
-			init();
-			animate();
-            render();
+<script src="https://threejs.org/build/three.js"></script>
+<script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
+<script src="https://threejs.org/examples/js/renderers/Projector.js"></script>
+<script src="https://threejs.org/examples/js/renderers/CanvasRenderer.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="gethotels.js"></script>
+<script>
+    var hotelColor = 0x00ff00, highlightColor = 0xff0000;
+    var hotelMeshes = [];
+    var hotelMeshArray = [];
+    var container;
+    var camera, scene, renderer, controls, raycaster;
+    var mouse = new THREE.Vector2();
+    var INTERSECTED;//an intersected object
+    var group;
+    var mouseX = 0, mouseY = 0;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
 
-			function init() {
-				container = document.getElementById( 'container' );
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
+    var sphereRadius = 200;
+    var cameraRadius = 500;
+    var tellusMesh;
 
-                //mouse rotate
-                controls = new THREE.OrbitControls( camera );
-                controls.target.set( 0, 0, 0 )
-                controls.rotateSpeed = 0.1;
-                controls.zoomSpeed = 1.2;
-                controls.panSpeed = 2.8;
-                controls.enableZoom = true;
-                controls.enablePan = true;
-                //controls.noRotate = true;
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.3;
-                controls.keys = [ 65, 83, 68 ];
+    var loader;
 
-				setPositionFromLatLongAndRadius( 59.328220, 18.016351, cameraRadius, camera.position);
-				
-				scene = new THREE.Scene();
-				group = new THREE.Group();
-				scene.add( group );
-				// earth
-				var loader = new THREE.TextureLoader();
-				loader.load( 'land_shallow_topo_2048.png', function ( texture ) {
-					var geometry = new THREE.SphereGeometry( sphereRadius, 20, 20 );
-					var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
-					var mesh = new THREE.Mesh( geometry, material );
-					group.add( mesh );
+    init();
+    animate();
+    render();
 
-					var myMarker = getMapMarker(canvas, 59.328220, 18.016351, mesh);
-					group.add(myMarker);
-				} );
-				// shadow
-				var canvas = document.createElement( 'canvas' );
-				canvas.width = 128;
-				canvas.height = 128;
-				var context = canvas.getContext( '2d' );
-				var gradient = context.createRadialGradient(
-					canvas.width / 2,
-					canvas.height / 2,
-					0,
-					canvas.width / 2,
-					canvas.height / 2,
-					canvas.width / 2
-				);
-				gradient.addColorStop( 0.1, 'rgba(210,210,210,1)' );
-				gradient.addColorStop( 1, 'rgba(255,255,255,1)' );
-				context.fillStyle = gradient;
-				context.fillRect( 0, 0, canvas.width, canvas.height );
-				var texture = new THREE.CanvasTexture( canvas );
-				var geometry = new THREE.PlaneBufferGeometry( 300, 300, 3, 3 );
-				var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
-				var mesh = new THREE.Mesh( geometry, material );
-				mesh.position.y = - 250;
-				mesh.rotation.x = - Math.PI / 2;
-				group.add( mesh );
-				renderer = new THREE.CanvasRenderer();
-				renderer.setClearColor( 0xffffff );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-			}
+    function changeHotelProduct(){
+        var selected = $('input[name=hotelProduct]:checked').val();
+        getHotels(selected, populateHotelMarker);
+    }
 
-			function getMapMarker(canvas, lat, lng, groupMainObject){
+    function populateHotelMarker(hotel) {
+                    getMapMarker(hotel.location.latitude,
+                        hotel.location.longitude,
+                        tellusMesh,
+                        function(myMarker) {
+                            group.add(myMarker);
+                            // Check for overlapping pins.
+                            var tightSpot = false;
+                            for (var hotelIndex in hotelMeshes) {
+                                var compareFunction = function(position1, position2) {
+                                    return position1.x + 0.2 > position2.x &&
+                                        position1.x - 0.2 < position2.x &&
+                                        position1.y + 0.2 > position2.y &&
+                                        position1.y - 0.2 < position2.y &&
+                                        position1.z + 0.2 > position2.z &&
+                                        position1.z - 0.2 < position2.z;
+                                };
+                                if (compareFunction(hotelMeshes[hotelIndex].mesh.position, myMarker.position)) {
+                                    tightSpot = true;
+                                    myMarker.rotation.x -= 0.2;
+                                    myMarker.rotation.y += 0.2;
+                                    if (!hotelMeshes[hotelIndex].tightSpot) {
+                                        hotelMeshes[hotelIndex].mesh.rotation.x += 0.1;
+                                        hotelMeshes[hotelIndex].mesh.rotation.y += 0.2;
+                                        hotelMeshes[hotelIndex].tightSpot = true;
+                                    }
+                                }
+                            }
+                            hotelMeshes.push({ mesh: myMarker, tightSpot: tightSpot });
+                            myMarker.children[0].hotel = hotel;
+                            hotelMeshArray.push(myMarker.children[0]);
+                        });
+                }
 
-				var x = 0, y = 0;
+    function init() {
+        container = document.getElementById('container');
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
 
-				var heartShape = new THREE.Shape();
+        //mouse rotate
+        controls = new THREE.OrbitControls(camera);
+        controls.target.set(0, 0, 0);
+        controls.rotateSpeed = 0.1;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 2.8;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.3;
+        controls.keys = [65, 83, 68];
 
-				heartShape.moveTo( x + 5, y + 5 );
-				heartShape.bezierCurveTo( x + 5, y + 5, x + 4, y, x, y );
-				heartShape.bezierCurveTo( x - 6, y, x - 6, y + 7,x - 6, y + 7 );
-				heartShape.bezierCurveTo( x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19 );
-				heartShape.bezierCurveTo( x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7 );
-				heartShape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
-				heartShape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
-				
-				var geometry = new THREE.ShapeBufferGeometry( heartShape );
-				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
-				var mesh = new THREE.Mesh( geometry, material ) ;
+        setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
 
-				mesh = setMarkerPosition(lat, lng, mesh, groupMainObject, sphereRadius+5);
+        scene = new THREE.Scene();
+        group = new THREE.Group();
+        scene.add(group);
+        // earth
+        loader = new THREE.TextureLoader();
+        loader.load('land_shallow_topo_2048.png',
+            function(texture) {
+                var geometry = new THREE.SphereGeometry(sphereRadius, 40, 40);
+                var material = new THREE.MeshPhongMaterial({ map: texture, overdraw: 0.5 });
+                tellusMesh =  new THREE.Mesh(geometry, material);
+                group.add(tellusMesh);
+                getHotels("sunwing", populateHotelMarker);
+            });
 
-				return mesh;
-			}
+        renderer = new THREE.CanvasRenderer();
+        renderer.setClearColor(0xffffff);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+        raycaster = new THREE.Raycaster();
+        document.addEventListener('mousemove', onDocumentMouseMove, false);
 
-			function setMarkerPosition(lat, lng, mapMarker, groupMainObject, pointRadius) {
+        document.addEventListener('click', onClick, false);
+    }
 
-				setPositionFromLatLongAndRadius( lat, lng, pointRadius, mapMarker.position );
+    function getMapMarker(lat, lng, groupMainObject, callBack) {
 
-				//mapMarker.lookAt(groupMainObject.position);
+        var x = 0, y = 0;
 
-				mapMarker.updateMatrix();
-				return mapMarker;
-			}			
+        var material = new THREE.MeshBasicMaterial({ color: hotelColor, side: THREE.DoubleSide });
+        var loader = new THREE.STLLoader();
+        loader.load("pin4.stl",
+            function(geometry) {
+                geometry.center();
+                var mesh = new THREE.Mesh(geometry, material);
+                mesh.position.z = -4.5;
+                var pivot = new THREE.Object3D(); // Blir rotationspunkten för nålen. Sitter på nolspetsen vilket gör att man kan luta nålen.
+                pivot.add(mesh);
+                pivot = setMarkerPosition(lat, lng, pivot, groupMainObject, sphereRadius);
+                callBack(pivot);
+            });
+    }
 
-			function setPositionFromLatLongAndRadius(lat, lng, pointRadius, position){
-				lng = lng + 180;
-				lng = lng > 180 ? lng - 360 : lng;
-				
-				var phi = (90 - lat) * Math.PI / 180;
-				var theta = (180 - lng) * Math.PI / 180;
+    function setMarkerPosition(lat, lng, mapMarker, groupMainObject, pointRadius) {
 
-				position.x = pointRadius * Math.sin(phi) * Math.cos(theta);
-				position.y = pointRadius * Math.cos(phi);
-				position.z = pointRadius * Math.sin(phi) * Math.sin(theta);
-			}
+        setPositionFromLatLongAndRadius(lat, lng, pointRadius, mapMarker.position);
+        mapMarker.updateMatrix();
+        mapMarker.lookAt(tellusMesh.position);
+        return mapMarker;
+    }
 
-            function render() {
-				requestAnimationFrame( render );
-				renderer.render( scene, camera );
-			}
+    function setPositionFromLatLongAndRadius(lat, lng, pointRadius, position) {
+        lng = lng + 180;
+        lng = lng > 180 ? lng - 360 : lng;
 
-			function animate() {
-				requestAnimationFrame( animate );
-				controls.update();
-			}
-		</script>
+        var phi = (90 - lat) * Math.PI / 180;
+        var theta = (180 - lng) * Math.PI / 180;
 
-	</body>
+        position.x = pointRadius * Math.sin(phi) * Math.cos(theta);
+        position.y = pointRadius * Math.cos(phi);
+        position.z = pointRadius * Math.sin(phi) * Math.sin(theta);
+    }
+
+    function onDocumentMouseMove(event) {
+        event.preventDefault();
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onClick(event) {
+        if (INTERSECTED) {
+            $('.divInfoContainer').show();
+            document.getElementById('divHotelName').innerHTML = INTERSECTED.hotel.name;
+            var div = document.getElementById('divHotelDescription');
+            div.innerHTML = '';
+            for (var i = 0; i < INTERSECTED.hotel.description.length; i++) {
+                div.innerHTML += '<p>' + INTERSECTED.hotel.description[i].text+ '</p>';
+            }
+        }
+    }
+
+    function render() {
+        requestAnimationFrame(render);
+
+        renderer.render(scene, camera);
+
+        findIntersections();
+    }
+
+    function findIntersections() {
+        raycaster.setFromCamera(mouse, camera);
+        var intersects = raycaster.intersectObjects(hotelMeshArray);
+        if(intersects.length > 0) {
+            intersects[0].object.material.color.setHex(highlightColor);
+            if(INTERSECTED && INTERSECTED != intersects[0].object) {
+                INTERSECTED.material.color.setHex(hotelColor);
+            }
+            INTERSECTED = intersects[0].object;
+        } else {
+            if(INTERSECTED)
+                INTERSECTED.material.color.setHex(hotelColor);
+            INTERSECTED = null;
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+    }
+</script>
+
+</body>
 </html>
