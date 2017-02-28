@@ -35,7 +35,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="gethotels.js"></script>
 <script>
-    var hotelColor = 0x00ff00, highlightColor = 0xff0000;
+    var hotelColor = 0xfcb40c, highlightColor = 0xff5500;
     var hotelMeshes = [];
     var hotelMeshArray = [];
     var container;
@@ -99,6 +99,7 @@
     function init() {
         container = document.getElementById('container');
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+        scene = new THREE.Scene();
 
         //mouse rotate
         controls = new THREE.OrbitControls(camera);
@@ -112,9 +113,14 @@
         controls.dampingFactor = 0.3;
         controls.keys = [65, 83, 68];
 
-        setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
+        //setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
+        setPositionFromLatLongAndRadius(35, 18.016351, cameraRadius, camera.position);
+        
+        addGlobePointLights();
 
-        scene = new THREE.Scene();
+        var ambientLight = new THREE.AmbientLight( 0xaaaaaa ); // soft white light
+        scene.add( ambientLight );
+       
         group = new THREE.Group();
         scene.add(group);
         // earth
@@ -128,8 +134,8 @@
                 getHotels("sunwing", populateHotelMarker);
             });
 
-        renderer = new THREE.CanvasRenderer();
-        renderer.setClearColor(0xffffff);
+        renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(0x000000);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         container.appendChild(renderer.domElement);
@@ -139,20 +145,41 @@
         document.addEventListener('click', onClick, false);
     }
 
-    function getMapMarker(lat, lng, groupMainObject, callBack) {
+    function addGlobePointLights(){
+        var pointLight1 = new THREE.PointLight( 0xffffff, 7, 300 );
+        setPositionFromLatLongAndRadius(45, -45, 400, pointLight1.position);
+        scene.add(pointLight1);
+        var pointLight2 = new THREE.PointLight( 0xffffff, 7, 300 );
+        setPositionFromLatLongAndRadius(-20, 90, 400, pointLight2.position);
+        scene.add(pointLight2);
+    }
 
+    function addMarkerPointLight( lat, lng ){
+        var pointLight = new THREE.PointLight( 0x00cccc, 5, 8.5 );
+        setPositionFromLatLongAndRadius(lat, lng, sphereRadius+5, pointLight.position);
+        scene.add(pointLight);
+    }
+
+    function getMapMarker(lat, lng, groupMainObject, callBack) {
         var x = 0, y = 0;
 
-        var material = new THREE.MeshBasicMaterial({ color: hotelColor, side: THREE.DoubleSide });
+        var material = new THREE.MeshLambertMaterial({ color: hotelColor });
         var loader = new THREE.STLLoader();
-        loader.load("pin4.stl",
+        loader.load("heart.stl",
             function(geometry) {
+                
                 geometry.center();
                 var mesh = new THREE.Mesh(geometry, material);
+
+                var rotMat = new THREE.Matrix4().makeRotationX(Math.PI/2*-1);
+				geometry.applyMatrix(rotMat);
                 mesh.position.z = -4.5;
                 var pivot = new THREE.Object3D(); // Blir rotationspunkten för nålen. Sitter på nolspetsen vilket gör att man kan luta nålen.
                 pivot.add(mesh);
                 pivot = setMarkerPosition(lat, lng, pivot, groupMainObject, sphereRadius);
+
+                addMarkerPointLight( lat, lng  );
+
                 callBack(pivot);
             });
     }
@@ -160,8 +187,9 @@
     function setMarkerPosition(lat, lng, mapMarker, groupMainObject, pointRadius) {
 
         setPositionFromLatLongAndRadius(lat, lng, pointRadius, mapMarker.position);
-        mapMarker.updateMatrix();
         mapMarker.lookAt(tellusMesh.position);
+        mapMarker.updateMatrix();
+        
         return mapMarker;
     }
 

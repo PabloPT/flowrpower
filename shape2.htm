@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.min.js"></script>
+		<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+		
+		<script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
+		
+		<script>
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			//mouse rotate
+			controls = new THREE.OrbitControls(camera);
+			controls.target.set(0, 0, 0);
+			controls.rotateSpeed = 0.1;
+			controls.zoomSpeed = 1.2;
+			controls.panSpeed = 2.8;
+			controls.enableZoom = true;
+			controls.enablePan = true;
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.3;
+			controls.keys = [65, 83, 68];
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+						
+            
+			var light = new THREE.PointLight( 0xaa0000, 5, 8.5 );
+			light.position.set(3,3,3 );
+			scene.add( light );
+
+			var amblight = new THREE.AmbientLight( 0x111111, 5, 8.5 );
+			
+			scene.add( amblight );
+
+			addShape();
+
+			var mat = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+			var geo = new THREE.SphereGeometry(2, 10,10);
+			var mes = new THREE.Mesh(geo, mat);
+			scene.add(mes);
+
+			camera.position.set(0,0,20);				
+
+			animate();
+
+			function render() {
+				requestAnimationFrame( render );
+				renderer.render( scene, camera );
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update();
+			}	
+
+
+            function addShape(){
+				var material = new THREE.MeshLambertMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+				var loader = new THREE.STLLoader();
+				loader.load("heart.stl",
+				function(geometry) {
+					geometry.center();
+					var mesh = new THREE.Mesh(geometry, material);
+
+					var rotMat = new THREE.Matrix4().makeRotationX(Math.PI/2*-1);
+					geometry.applyMatrix(rotMat);				
+
+					var p = 6;
+					mesh.position.x = p;
+					mesh.position.y = p;
+					mesh.position.z = p;
+					mesh.lookAt( new THREE.Vector3( 0,0,0 ));
+
+					scene.add(mesh);
+				});
+		}
+
+			
+			render();
+		</script>
+	</body>
+</html>
