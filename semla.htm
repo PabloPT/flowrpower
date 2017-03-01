@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.min.js"></script>
+		<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+		
+		<script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
+		
+		<script>
+			document.addEventListener('click', onClick, false);
+
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			//mouse rotate
+			controls = new THREE.OrbitControls(camera);
+			controls.target.set(0, 0, 0);
+			controls.rotateSpeed = 0.1;
+			controls.zoomSpeed = 1.2;
+			controls.panSpeed = 2.8;
+			controls.enableZoom = true;
+			controls.enablePan = true;
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.3;
+			controls.keys = [65, 83, 68];
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor(0x000000);
+			document.body.appendChild( renderer.domElement );
+						
+            
+			var light = new THREE.PointLight( 0xffffff, 5, 30 );
+			light.position.set(3,3,3 );
+			scene.add( light );
+
+			var light2 = new THREE.PointLight( 0xffffff, 5, 30 );
+			light2.position.set(0,0,-20 );
+			scene.add( light2 );
+
+			var amblight = new THREE.AmbientLight( 0x444444, 5, 1 );			
+			scene.add( amblight );
+			
+			for(var i =0; i < 50; i++)
+				addShape();
+
+			camera.position.set(0,0,20);				
+
+			animate();
+
+			function render() {
+
+				moveShapes();
+
+				requestAnimationFrame( render );
+				renderer.render( scene, camera );
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update();
+			}	
+
+			function moveShapes(){
+				if(pause)
+					return;
+
+				for(var i = 0; i < allShapes.length; i++){
+					var s = allShapes[i];
+					s.position.z++;
+					if(s.position.z > maxDistance)
+						s.position.z = minDistance;
+				}
+			}
+			
+			var allShapes = [];
+
+			var minDistance = -200;
+			var maxDistance = 50;
+
+            function addShape(){
+				
+				var loader = new THREE.JSONLoader();
+				loader.load("semla.json ",
+				function(geometry, materials) {
+					var material = new THREE.MeshFaceMaterial(materials);
+					geometry.center();
+					var mesh = new THREE.Mesh(geometry, material);
+					var minPosition = -50;
+					var maxPosition = 50;
+					mesh.position.x = getRandomInt(minPosition, maxPosition);
+					mesh.position.y = getRandomInt(minPosition, maxPosition);
+					mesh.position.z = getRandomInt(minDistance, maxDistance);
+					mesh.scale.set(3,3,3);
+					scene.add(mesh);
+
+					allShapes.push(mesh);
+				});
+			}
+
+			function getRandomInt(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+			//var boxGeometry = new THREE.BoxGeometry(2.0, 2.0, 2.0); 
+			var boxGeometry = new THREE.PlaneGeometry(1024, 768)
+
+
+var neheTexture = new THREE.ImageUtils.loadTexture("hungry-homer.jpg"); 
+
+var boxMaterial = new THREE.MeshBasicMaterial({ 
+    map:neheTexture, 
+    side:THREE.DoubleSide 
+}); 
+
+boxMesh = new THREE.Mesh(boxGeometry, boxMaterial); 
+boxMesh.position.set(0,0,75); 
+scene.add(boxMesh); 
+			
+			render();
+
+			var pause = false;
+
+			function onClick(){
+				pause = !pause;
+			}
+		</script>
+	</body>
+</html>
