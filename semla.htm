@@ -89,7 +89,7 @@
             function addShape(){
 				
 				var loader = new THREE.JSONLoader();
-				loader.load("semla.json ",
+				loader.load("semla.json",
 				function(geometry, materials) {
 					var material = new THREE.MeshFaceMaterial(materials);
 					geometry.center();
@@ -114,16 +114,16 @@
 			var boxGeometry = new THREE.PlaneGeometry(1024, 768)
 
 
-var neheTexture = new THREE.ImageUtils.loadTexture("hungry-homer.jpg"); 
+			var neheTexture = new THREE.ImageUtils.loadTexture("hungry-homer.jpg"); 
 
-var boxMaterial = new THREE.MeshBasicMaterial({ 
-    map:neheTexture, 
-    side:THREE.DoubleSide 
-}); 
+			var boxMaterial = new THREE.MeshBasicMaterial({ 
+				map:neheTexture, 
+				side:THREE.DoubleSide 
+			}); 
 
-boxMesh = new THREE.Mesh(boxGeometry, boxMaterial); 
-boxMesh.position.set(0,0,75); 
-scene.add(boxMesh); 
+			boxMesh = new THREE.Mesh(boxGeometry, boxMaterial); 
+			boxMesh.position.set(0,0,75); 
+			scene.add(boxMesh); 
 			
 			render();
 
