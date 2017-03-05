@@ -5,7 +5,17 @@
 		<meta charset="utf-8">
 	    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <link href="site.css" type="text/css" rel="stylesheet" />
-
+        <style type="text/css">
+            BODY
+            {
+                
+            }
+            canvas
+            {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
 	</head>
 <body>
     <div class="divInfoContainer">
@@ -52,6 +62,7 @@
     var tellusMesh;
 
     var loader;
+    var renderFuncs = [];
 
     init();
     animate();
@@ -113,29 +124,33 @@
         controls.dampingFactor = 0.3;
         controls.keys = [65, 83, 68];
 
-        //setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
-        setPositionFromLatLongAndRadius(35, 18.016351, cameraRadius, camera.position);
-        
-        addGlobePointLights();
 
-        var ambientLight = new THREE.AmbientLight( 0xaaaaaa ); // soft white light
+        setupAtmosphere();
+
+        setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
+       
+        
+        //addGlobePointLights();
+        var ambientLight = new THREE.AmbientLight( 0xffac62, 0.2 ); // soft white light
         scene.add( ambientLight );
+
        
         group = new THREE.Group();
         scene.add(group);
         // earth
         loader = new THREE.TextureLoader();
-        loader.load('land_shallow_topo_2048.png',
+        loader.load('earth.png',
             function(texture) {
                 var geometry = new THREE.SphereGeometry(sphereRadius, 40, 40);
-                var material = new THREE.MeshPhongMaterial({ map: texture, overdraw: 0.5 });
+                geometry.center();
+                var material = new THREE.MeshPhongMaterial({ map: texture, overdraw: 0.5, shininess: 0.3 });
                 tellusMesh =  new THREE.Mesh(geometry, material);
                 group.add(tellusMesh);
                 getHotels("sunwing", populateHotelMarker);
             });
 
-        renderer = new THREE.WebGLRenderer();
-        renderer.setClearColor(0x000000);
+        renderer = new THREE.WebGLRenderer({  alpha: true });
+        /*renderer.setClearColor(0x000000);*/
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         container.appendChild(renderer.domElement);
@@ -143,7 +158,57 @@
         document.addEventListener('mousemove', onDocumentMouseMove, false);
 
         document.addEventListener('click', onClick, false);
+        //setPositionFromLatLongAndRadius(35, 18.016351, cameraRadius, camera.position);
     }
+
+    function setupAtmosphere() {
+        // LIGHTS
+        var frontLight = new THREE.PointLight(0xf5c43f, 0.7);
+        frontLight.position.z = 400;
+        var leftSideLight = new THREE.PointLight(0x00f6ff, 0.9);
+        leftSideLight.position.x = -400;
+        leftSideLight.position.y = 100;
+        leftSideLight.position.z = 300;
+        var leftSideLight2 = new THREE.PointLight(0x00f6ff, 0.5);
+        leftSideLight2.position.x = -400;
+        leftSideLight2.position.y = -100;
+        leftSideLight2.position.z = 300;
+        var rightSideLight = new THREE.PointLight(0x00f6ff, 0.5);
+        rightSideLight.position.x = 300;
+        rightSideLight.position.y = 200;
+        var rightSideLight2 = new THREE.PointLight(0x00f6ff, 0.5);
+        rightSideLight2.position.x = 300;
+        rightSideLight2.position.y = 0;
+        var sunLight = new THREE.PointLight(0xff2a00, 1.0);
+        sunLight.position.y = 400;
+        sunLight.position.z = 200;
+        var bottomDarkLigth = new THREE.PointLight(0x5e5e5e, 0.5);
+        bottomDarkLigth.position.y = -400;
+        bottomDarkLigth.position.z = 200;
+        // HALO
+        haloMaterial = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'halo.png' ), transparent: true, opacity: 1.0 });
+        haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(530, 550), haloMaterial);
+        haloMesh.position.x = -9.5;
+        haloMesh.position.y = 24;
+        haloMesh.position.z = 60;
+        // Create control object.
+        var atmosphere3dObject = new THREE.Object3D();
+        atmosphere3dObject.add(haloMesh);
+        atmosphere3dObject.add(frontLight);
+        atmosphere3dObject.add(bottomDarkLigth);
+        atmosphere3dObject.add(sunLight);
+        atmosphere3dObject.add(leftSideLight);
+        atmosphere3dObject.add(leftSideLight2);
+        atmosphere3dObject.add(rightSideLight);
+        atmosphere3dObject.add(rightSideLight2);
+        scene.add(atmosphere3dObject);
+        // Add animation func.
+        renderFuncs.push(function() {
+            var matrix = new THREE.Matrix4();
+            matrix.makeRotationFromEuler(camera.rotation);
+            atmosphere3dObject.setRotationFromMatrix (matrix);
+        });
+    };
 
     function addGlobePointLights(){
         var pointLight1 = new THREE.PointLight( 0xffffff, 7, 300 );
@@ -250,6 +315,9 @@
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
+        for (var i in renderFuncs) {
+            renderFuncs[i]();
+        }
     }
 </script>
 
