@@ -43,6 +43,7 @@
 <script src="https://threejs.org/examples/js/renderers/CanvasRenderer.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="lolloandbernie.js"></script>
 <script src="gethotels.js"></script>
 <script>
     var hotelColor = 0xfcb40c, highlightColor = 0xff5500;
@@ -124,11 +125,9 @@
         controls.dampingFactor = 0.3;
         controls.keys = [65, 83, 68];
 
-
         setupAtmosphere();
 
         setPositionFromLatLongAndRadius(59.328220, 18.016351, cameraRadius, camera.position);
-       
         
         //addGlobePointLights();
         var ambientLight = new THREE.AmbientLight( 0xffac62, 0.2 ); // soft white light
@@ -143,7 +142,7 @@
             function(texture) {
                 var geometry = new THREE.SphereGeometry(sphereRadius, 40, 40);
                 geometry.center();
-                var material = new THREE.MeshPhongMaterial({ map: texture, overdraw: 0.5, shininess: 0.3 });
+                var material = new THREE.MeshPhongMaterial({ map: texture, overdraw: 0.5, shininess: 0.6 });
                 tellusMesh =  new THREE.Mesh(geometry, material);
                 group.add(tellusMesh);
                 getHotels("sunwing", populateHotelMarker);
@@ -158,12 +157,11 @@
         document.addEventListener('mousemove', onDocumentMouseMove, false);
 
         document.addEventListener('click', onClick, false);
-        //setPositionFromLatLongAndRadius(35, 18.016351, cameraRadius, camera.position);
     }
 
     function setupAtmosphere() {
         // LIGHTS
-        var frontLight = new THREE.PointLight(0xf5c43f, 0.7);
+        var frontLight = new THREE.PointLight(0xffbc47, 0.7);
         frontLight.position.z = 400;
         var leftSideLight = new THREE.PointLight(0x00f6ff, 0.9);
         leftSideLight.position.x = -400;
@@ -180,17 +178,25 @@
         rightSideLight2.position.x = 300;
         rightSideLight2.position.y = 0;
         var sunLight = new THREE.PointLight(0xff2a00, 1.0);
-        sunLight.position.y = 400;
-        sunLight.position.z = 200;
+        sunLight.position.y = 300;
+        sunLight.position.z = 300;
         var bottomDarkLigth = new THREE.PointLight(0x5e5e5e, 0.5);
         bottomDarkLigth.position.y = -400;
         bottomDarkLigth.position.z = 200;
         // HALO
-        haloMaterial = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'halo.png' ), transparent: true, opacity: 1.0 });
-        haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(530, 550), haloMaterial);
-        haloMesh.position.x = -9.5;
-        haloMesh.position.y = 24;
-        haloMesh.position.z = 60;
+        var haloMaterial = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'halo.png' ), transparent: true, opacity: 1.0 });
+        var haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), haloMaterial);
+        haloMesh.position.z = 50;
+
+        // Lollo & Bernie
+        var lolloAndBernieManager = new lolloAndBernie(THREE);
+        lolloAndBernieManager.mesh.position.y = 212;
+        lolloAndBernieManager.mesh.position.z = 55;
+        lolloAndBernieManager.mesh.scale.set(0.25, 0.25, 0.25);
+        var lolloAndBernie3dObject = new THREE.Object3D();
+        lolloAndBernie3dObject.add(lolloAndBernieManager.mesh);
+        lolloAndBernie3dObject.rotation.z = -0.1;
+        
         // Create control object.
         var atmosphere3dObject = new THREE.Object3D();
         atmosphere3dObject.add(haloMesh);
@@ -201,12 +207,13 @@
         atmosphere3dObject.add(leftSideLight2);
         atmosphere3dObject.add(rightSideLight);
         atmosphere3dObject.add(rightSideLight2);
+        atmosphere3dObject.add(lolloAndBernie3dObject);
         scene.add(atmosphere3dObject);
+        
         // Add animation func.
         renderFuncs.push(function() {
-            var matrix = new THREE.Matrix4();
-            matrix.makeRotationFromEuler(camera.rotation);
-            atmosphere3dObject.setRotationFromMatrix (matrix);
+            atmosphere3dObject.lookAt(camera.position);
+            lolloAndBernieManager.animate();
         });
     };
 
